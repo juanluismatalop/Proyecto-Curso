@@ -2,6 +2,7 @@ package com.example.proyectocurso
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -14,6 +15,7 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -45,7 +47,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initEvent() {
-
         buttonCalculadora.setOnClickListener {
             val intent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_APP_CALCULATOR)
@@ -74,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         if (isGranted) {
             openCallActivity()
         } else {
-            Toast.makeText(this, "Permiso de llamada denegado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permiso de llamada denegado. No se puede acceder a la actividad de llamadas.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -103,11 +104,26 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             Toast.makeText(this, "Debes permitir el acceso a alarmas exactas.", Toast.LENGTH_LONG).show()
         } else {
-            setAlarmIn15Minutes()
+            scheduleAlarm()
         }
     }
-    //comentario
+
     private fun setAlarmIn15Minutes() {
         requestExactAlarmPermission()
+    }
+
+    private fun scheduleAlarm() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, AlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+        val triggerTime = System.currentTimeMillis() + 15 * 60 * 1000
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+        } else {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+        }
+
+        Toast.makeText(this, "Alarma programada para dentro de 15 minutos.", Toast.LENGTH_SHORT).show()
     }
 }
